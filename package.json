@@ -1,0 +1,22 @@
+{
+  "name": "taskflow-project",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Demo site for a Jira-like taskflow web app, with a Playwright end-to-end suite.",
+  "scripts": {
+    "start": "node server/static-server.js",
+    "dev": "node server/static-server.js --port 4173",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^26.4.1",
+    "typescript": "^5.9.3"
+  }
+}
