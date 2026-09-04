@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
- * Minimal static file server for the TaskFlow demo app.
+ * Server for the TaskFlow demo: the static site plus the ticket REST API.
  *
- * Deliberately dependency free so `npm ci` only ever installs test tooling.
- * Playwright's `webServer` starts this and waits for the port to answer.
+ * Both live on one port so the browser app and the API share an origin and
+ * there is a single process to start. Deliberately dependency free, so
+ * `npm ci` only ever installs test tooling. Playwright's `webServer` starts
+ * this and waits for the port to answer.
  *
  *   node server/static-server.js [--port 4173] [--root app]
  */
@@ -13,6 +15,8 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { API_PREFIX, createTicketApi } from './api.js';
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -50,8 +54,15 @@ async function resolveFile(root, urlPath) {
 
 export function createStaticServer(root) {
   const rootDir = resolve(root);
+  const api = createTicketApi();
 
   return createServer(async (req, res) => {
+    const path = (req.url ?? '/').split('?')[0];
+    if (path === API_PREFIX || path.startsWith(`${API_PREFIX}/`)) {
+      await api.handle(req, res);
+      return;
+    }
+
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.writeHead(405, { allow: 'GET, HEAD' }).end('Method Not Allowed');
       return;
@@ -84,5 +95,6 @@ if (isMain) {
   const { port, root } = readArgs(process.argv.slice(2));
   createStaticServer(root).listen(port, () => {
     console.log(`TaskFlow running at http://localhost:${port}`);
+    console.log(`API at            http://localhost:${port}${API_PREFIX}/tickets`);
   });
 }

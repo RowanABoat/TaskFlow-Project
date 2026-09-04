@@ -1,14 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright configuration for the TaskFlow end-to-end suite.
+ * Playwright configuration for the TaskFlow end-to-end and API suites.
  *
- * The app is a static site, so `webServer` boots the dependency-free Node
- * server in `server/` and every test navigates against `baseURL`.
+ * `webServer` boots the dependency-free Node server in `server/`, which serves
+ * both the static site and the ticket REST API on one port. UI specs navigate
+ * against `baseURL`; API specs hit the same origin through the `request`
+ * fixture and never open a browser.
  *
- * By default only the Chromium-backed projects run, which is what most local
+ * By default only the Chromium-backed UI projects run, which is what most local
  * checkouts have installed. Set `PW_ALL_BROWSERS=1` (as CI does) to add the
- * Firefox and WebKit projects.
+ * Firefox and WebKit projects. The `api` project always runs.
  */
 
 const PORT = Number(process.env.PORT ?? 4173);
@@ -43,6 +45,13 @@ export default defineConfig({
   },
 
   projects: [
+    {
+      // API specs share one in-memory board on the server, so they run in
+      // sequence and reset it between tests. See e2e/api/tickets.spec.ts.
+      name: 'api',
+      testDir: './e2e/api',
+      fullyParallel: false,
+    },
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
     ...(allBrowsers
