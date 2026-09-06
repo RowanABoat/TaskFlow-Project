@@ -12,6 +12,9 @@
 
 import { SEED_TICKETS, isPriority, isStatus, validateTicket } from '../app/src/model.js';
 
+/** Node < 17 lacks structuredClone; tickets are plain JSON. */
+const cloneTickets = (tickets) => JSON.parse(JSON.stringify(tickets));
+
 export class ValidationError extends Error {
   /** @param {Record<string, string>} fields field name -> message */
   constructor(fields) {
@@ -32,7 +35,7 @@ export class TicketRepository {
 
   /** Restores the seed board. Exposed over HTTP so tests can isolate runs. */
   reset() {
-    this.#tickets = structuredClone(this.#seed);
+    this.#tickets = cloneTickets(this.#seed);
     return this.list();
   }
 
