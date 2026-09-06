@@ -6,6 +6,9 @@
 
 import { SEED_TICKETS, isPriority, isStatus } from './model.js';
 
+/** Node < 17 and some older browsers lack structuredClone; tickets are plain JSON. */
+const cloneTickets = (tickets) => JSON.parse(JSON.stringify(tickets));
+
 const STORAGE_KEY = 'taskflow.tickets.v1';
 
 export class TicketStore {
@@ -40,15 +43,15 @@ export class TicketStore {
   #load() {
     try {
       const raw = this.storage?.getItem(STORAGE_KEY);
-      if (!raw) return structuredClone(SEED_TICKETS);
+      if (!raw) return cloneTickets(SEED_TICKETS);
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return structuredClone(SEED_TICKETS);
+      if (!Array.isArray(parsed)) return cloneTickets(SEED_TICKETS);
       return parsed.filter(
         (t) => t && typeof t.key === 'string' && isStatus(t.status) && isPriority(t.priority),
       );
     } catch {
       // A corrupt or unavailable store should never break the board.
-      return structuredClone(SEED_TICKETS);
+      return cloneTickets(SEED_TICKETS);
     }
   }
 
@@ -172,7 +175,7 @@ export class TicketStore {
 
   /** Test/demo helper: wipe persisted state and start from the seed board. */
   reset() {
-    this.#tickets = structuredClone(SEED_TICKETS);
+    this.#tickets = cloneTickets(SEED_TICKETS);
     this.#filters = { search: '', priority: '', assignee: '' };
     this.#emit();
   }
